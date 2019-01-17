@@ -87,14 +87,14 @@ class Auction extends \yii\db\ActiveRecord
 
     /**
      * @param $item_id
-     * @return bool|Animal|null
+     * @return array|null|\yii\db\ActiveRecord
+     * @throws ErrorException
      * @throws \Throwable
      * @throws \yii\db\StaleObjectException
      */
     public static function buyItem($item_id)
     {
         if ($item = static::findOne(['id' => $item_id])) {
-
             $user = User::findOne(['id' => \Yii::$app->user->id]);
 
             if ($item->price <= $user->getHearts()) {
@@ -109,8 +109,7 @@ class Auction extends \yii\db\ActiveRecord
                     $animal->user_id = \Yii::$app->user->id;
                     $animal->save();
 
-                    $user->setHearts($user->getHearts() - $item->price);
-                    $user->save();
+                    User::setHearts(\Yii::$app->user->id, $user->getHearts() - $item->price);
 
                     $item->delete();
 

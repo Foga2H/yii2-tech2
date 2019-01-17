@@ -5,6 +5,7 @@ use Yii;
 use yii\base\ErrorException;
 use yii\behaviors\TimestampBehavior;
 use yii\db\ActiveRecord;
+use yii\db\Query;
 use yii\web\IdentityInterface;
 
 /**
@@ -148,11 +149,19 @@ class User extends ActiveRecord implements IdentityInterface
     }
 
     /**
-     * @param int $hearts
+     * @param $user_id
+     * @param $hearts
+     * @return bool
+     * @throws ErrorException
      */
-    public function setHearts($hearts)
+    public static function setHearts($user_id, $hearts)
     {
-        $this->hearts = $hearts;
+        if ($user = static::findOne(['id' => $user_id])) {
+            $user->hearts = $hearts;
+            return $user->save();
+        }
+
+        throw new ErrorException('User not found');
     }
 
     /**
@@ -169,6 +178,36 @@ class User extends ActiveRecord implements IdentityInterface
         }
 
         throw new ErrorException('User not found');
+    }
+
+    /**
+     * @param $animalCount
+     * @return User[]
+     */
+    public static function byAnimalCountAndType($animalCount, $animalType) {
+        $animals = (new Query())->select('user_id, COUNT(*)')
+            ->from('{{%animal}}')->where(['animal_type_id' => $animalType])->groupBy('user_id')->all();
+
+        $users_ids = array_map(function($item) { return $item['user_id']; }, array_filter($animals, function($item) use ($animalCount) {
+            return $item['count'] == $animalCount;
+        }));
+
+        return static::findAll($users_ids);
+    }
+
+    /**
+     * @param $animalCount
+     * @return User[]
+     */
+    public static function byAnimalCount($animalCount) {
+        $animals = (new Query())->select('user_id, COUNT(*)')
+            ->from('{{%animal}}')->groupBy('user_id')->all();
+
+        $users_ids = array_map(function($item) { return $item['user_id']; }, array_filter($animals, function($item) use ($animalCount) {
+            return $item['count'] == $animalCount;
+        }));
+
+        return static::findAll($users_ids);
     }
 
     /**

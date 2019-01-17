@@ -10,6 +10,7 @@ use Yii;
  * @property int $id
  * @property int $animal_type_id
  * @property int $user_id
+ * @property int $animal_parent_id
  * @property string $sex
  * @property int $age
  * @property int $hearts
@@ -100,11 +101,104 @@ class Animal extends \yii\db\ActiveRecord
     }
 
     /**
+     * @param int $animal_id
+     * @param int $hearts
+     * @return bool|null
+     */
+    public static function addHearts($animal_id, $hearts)
+    {
+        if ($animal = static::findOne(['id' => $animal_id])) {
+            $animal->hearts = $animal->hearts + $hearts;
+
+            return $animal->save();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param Animal $animal
+     * @return array
+     */
+    public static function findParents($animal)
+    {
+        $animals = static::find()->all();
+
+        $parents = self::getParents($animal, $animals);
+
+        return $parents;
+    }
+
+    /**
+     * @param Animal $animal
+     * @return array|\yii\db\ActiveRecord[]
+     */
+    public static function findChilds($animal)
+    {
+        $animals = static::find()->all();
+
+        $childs = self::getChilds($animal, $animals);
+
+        return $childs;
+    }
+
+    /**
      * @return mixed
      */
-    public static function randomSex() {
+    public static function randomSex()
+    {
         $sex = self::getSexTypes();
 
         return $sex[array_rand($sex)];
+    }
+
+    /**
+     * @param $animal
+     * @param $animals
+     * @param array $parents
+     * @return array
+     */
+    private static function getParents($animal, $animals, $parents = [])
+    {
+        if (!is_null($animal->animal_parent_id)) {
+            $parents[] = $animal->animal_parent_id;
+
+            if ($findParents = static::find()->where(['animal_parent_id' => $animal->animal_parent_id])
+                ->andWhere(['!=', 'id', $animal->id])->all()) {
+
+                foreach ($findParents as $parent) {
+                    foreach (self::getParents($parent, $animals, $parents) as $p) {
+                        if (!in_array($p, $parents)) {
+                            $parents[] = $p;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $parents;
+    }
+
+    /**
+     * @param $animal
+     * @param array $animals
+     * @param array $childs
+     * @return array|\yii\db\ActiveRecord[]
+     */
+    private static function getChilds($animal, $animals, $childs = [])
+    {
+        if ($findChilds = static::find()->where(['animal_parent_id' => $animal->id])->all()) {
+            foreach ($findChilds as $child) {
+                $childs[] = $child->id;
+
+                foreach (self::getChilds($child, $animals, $childs) as $c) {
+                    if (!in_array($c, $childs)) {
+                        $childs[] = $c;
+                    }
+                }
+            }
+        }
+
+        return $childs;
     }
 }

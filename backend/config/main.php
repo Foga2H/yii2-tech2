@@ -49,6 +49,12 @@ return [
                 'auctions' => 'auction/index',
                 'auction-add' => 'auction/add-item',
                 'auction-buy' => 'auction/buy-item',
+                'animals' => 'animal/index',
+                'animal/use-hearts' => 'animal/use-hearts',
+                'animal/get-parents/<animal_id:\d+>' => 'animal/get-parents',
+                'animal/get-childs/<animal_id:\d+>' => 'animal/get-childs',
+                'users' => 'user/index',
+                'user/<user_id:\d+>' => 'user/user'
             ],
         ],
     ],
