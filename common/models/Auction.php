@@ -98,7 +98,7 @@ class Auction extends \yii\db\ActiveRecord
             $user = User::findOne(['id' => \Yii::$app->user->id]);
 
             if ($item->price <= $user->getHearts()) {
-                if ($animal = Animal::findOne(['id' => $item->animal_id])) {
+                if ($animal = $item->getAnimal()->one()) {
 
                     if ($animal->user_id === \Yii::$app->user->id) {
                         throw new ErrorException('You cant buy from yourself');
