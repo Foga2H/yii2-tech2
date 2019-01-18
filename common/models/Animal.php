@@ -117,6 +117,63 @@ class Animal extends \yii\db\ActiveRecord
     }
 
     /**
+     * @param $animal_id
+     * @param $hearts
+     * @return bool|null
+     */
+    public static function setHearts($animal_id, $hearts)
+    {
+        if ($animal = static::findOne(['id' => $animal_id]) && $hearts) {
+            $animal->hearts = $hearts;
+
+            return $animal->save();
+        }
+
+        return null;
+    }
+
+    /**
+     * @param $user
+     */
+    public static function tryChildbirthByUser($user)
+    {
+        $animals = Animal::find()
+            ->where(['user_id' => $user->id])
+            ->andWhere(['>', 'age', 0])
+            ->all();
+
+        $males = array_filter($animals, function($item) { return $item['sex'] === self::SEX_MALE; });
+        $females = array_filter($animals, function($item) { return $item['sex'] === self::SEX_FEMALE; });
+
+        if ($males && $females) {
+            $male = $males(array_rand($males));
+
+            $childs = static::getChilds($male, $animals);
+            $parents = static::getParents($male, $animals);
+
+            $filterFemales = array_filter($females, function($item) use ($childs, $parents, $male) {
+                return $item['animal_type_id'] === $male->animal_type_id
+                    && !in_array($item['id'], $childs)
+                    && !in_array($item['id'], $parents);
+            });
+
+            if ($filterFemales) {
+                $female = $filterFemales(array_rand($filterFemales));
+
+                $animal = new Animal();
+                $animal->animal_type_id = $male->animal_type_id;
+                $animal->animal_parent_id = $male->id;
+                $animal->user_id = $user->id;
+                $animal->hearts = $male->getAnimalType()->one()->hearts_by_default;
+                $animal->sex = self::randomSex();
+                $animal->created_at = time();
+                $animal->updated_at = time();
+                $animal->save();
+            }
+        }
+    }
+
+    /**
      * @param Animal $animal
      * @return array
      */

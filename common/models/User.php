@@ -28,6 +28,7 @@ class User extends ActiveRecord implements IdentityInterface
     const STATUS_DELETED = 0;
     const STATUS_ACTIVE = 10;
 
+    const HEARTS_COUNT = 7; // Hearts count for one animal
 
     /**
      * {@inheritdoc}
@@ -208,6 +209,19 @@ class User extends ActiveRecord implements IdentityInterface
         }));
 
         return static::findAll($users_ids);
+    }
+
+    /**
+     * @param $user
+     * @return bool
+     * @throws ErrorException
+     */
+    public static function giveHeartsByAnimalCount($user) {
+        if ($animalCount = Animal::find()->where(['user_id' => $user->id])->count()) {
+            if ($user = static::addHearts($user->id, $animalCount * self::HEARTS_COUNT)) {
+                return $user;
+            }
+        }
     }
 
     /**
